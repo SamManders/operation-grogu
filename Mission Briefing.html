@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>// TRANSMISSION — OPERATION GROGU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --void:#07090c;
+    --void-2:#0d1117;
+    --panel:#11161d;
+    --line:#1c2530;
+    --steel:#cdd0d6;
+    --steel-dim:#8a929d;
+    --amber:#f0b418;
+    --amber-dim:#a47e10;
+    --alert:#e44b3c;
+    --green:#3ddc8a;
+    --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    --display:"Oswald", "Arial Narrow", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--void);color:var(--steel);font-family:var(--mono);min-height:100%}
+  body{
+    background:
+      radial-gradient(1200px 700px at 70% -10%, rgba(240,180,24,.08), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(228,75,60,.05), transparent 60%),
+      linear-gradient(180deg, #06080b 0%, #0a0d12 100%);
+    overflow-x:hidden;
+  }
+  /* Background grid */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(transparent 0 95%, rgba(205,208,214,.045) 95% 100%),
+      linear-gradient(90deg, transparent 0 95%, rgba(205,208,214,.045) 95% 100%);
+    background-size: 36px 36px, 36px 36px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 90%);
+  }
+  /* Scanlines */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 1px, transparent 1px 3px);
+    mix-blend-mode:overlay;
+  }
+
+  /* BOOT OVERLAY */
+  #boot{
+    position:fixed;inset:0;background:var(--void);z-index:50;
+    display:flex;flex-direction:column;justify-content:flex-end;padding:24px 28px;
+    font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--steel-dim);
+    transition:opacity .6s ease;
+  }
+  #boot .stream b{color:var(--amber);font-weight:500}
+  #boot .stream span{color:var(--green)}
+  #boot .stream em{color:var(--alert);font-style:normal}
+  #boot .caret::after{content:"▌";color:var(--amber);animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+  #boot.gone{opacity:0;pointer-events:none}
+
+  /* MAIN STAGE */
+  main{
+    position:relative;z-index:2;
+    max-width:1180px;margin:0 auto;padding:28px 28px 80px;
+  }
+
+  /* Top utility bar */
+  .util{
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+    font-size:11px;letter-spacing:.18em;color:var(--steel-dim);
+    border-bottom:1px dashed var(--line);padding:10px 0 12px;
+  }
+  .util .left,.util .right{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle}
+  .dot.live{background:var(--green);box-shadow:0 0 10px var(--green)}
+  .dot.amb{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+  .util b{color:var(--steel)}
+
+  /* Hazard tape */
+  .tape{
+    margin:16px 0;height:18px;border-radius:2px;
+    background:
+      repeating-linear-gradient(135deg, #f0b418 0 18px, #0a0d12 18px 36px);
+    opacity:.85;
+  }
+
+  /* Header */
+  .header{
+    display:grid;grid-template-columns: 1.4fr 1fr;gap:28px;align-items:end;
+    padding:28px 0 18px;
+  }
+  .stamp{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--amber);color:var(--amber);
+    padding:6px 10px;font-size:11px;letter-spacing:.28em;
+    background:rgba(240,180,24,.06);
+  }
+  .stamp.alert{border-color:var(--alert);color:var(--alert);background:rgba(228,75,60,.08)}
+  .header h1{
+    font-family:var(--display);font-weight:700;color:var(--steel);
+    font-size:clamp(48px, 8vw, 104px);line-height:.92;letter-spacing:.01em;
+    margin:14px 0 6px;text-transform:uppercase;
+  }
+  .header h1 .accent{color:var(--amber)}
+  .header .sub{
+    font-size:13px;letter-spacing:.22em;color:var(--steel-dim);text-transform:uppercase;
+  }
+  .header .meta{
+    border-left:1px solid var(--line);padding-left:20px;
+    font-size:12px;line-height:1.9;color:var(--steel-dim);
+  }
+  .header .meta b{color:var(--steel);font-weight:500}
+  .kbd{
+    display:inline-block;border:1px solid var(--line);padding:1px 6px;border-radius:3px;
+    background:#0d1219;color:var(--steel);font-size:11px;
+  }
+
+  /* Section frames */
+  .section{
+    border:1px solid var(--line);background:rgba(13,17,23,.7);
+    margin-top:22px;position:relative;
+  }
+  .section::before{
+    content:"";position:absolute;inset:6px;border:1px dashed rgba(205,208,214,.06);pointer-events:none;
+  }
+  .section > header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 16px;border-bottom:1px solid var(--line);
+    font-size:11px;letter-spacing:.28em;color:var(--steel-dim);
+  }
+  .section > header .code{color:var(--amber)}
+  .section .body{padding:22px 24px}
+
+  /* Briefing copy */
+  .brief p{margin:0 0 12px;font-size:14px;line-height:1.65;color:#dfe3e8}
+  .brief p .hi{color:var(--amber)}
+  .brief p .scrub{color:var(--steel-dim);text-decoration:line-through}
+
+  /* Loot manifest */
+  .manifest{display:grid;grid-template-columns:repeat(2,1fr);gap:0;}
+  .item{
+    display:grid;grid-template-columns: 56px 1fr auto;gap:14px;align-items:center;
+    padding:14px 16px;border-top:1px solid var(--line);
+  }
+  .item:nth-child(-n+2){border-top:0}
+  .item .id{
+    font-size:11px;color:var(--amber);letter-spacing:.14em;
+  }
+  .item .name{font-size:14px;color:var(--steel)}
+  .item .name small{display:block;color:var(--steel-dim);font-size:11px;letter-spacing:.1em;margin-top:2px}
+  .item .qty{font-size:11px;color:var(--steel-dim);letter-spacing:.16em}
+  .item .qty .qbox{
+    display:inline-block;border:1px solid var(--line);padding:2px 8px;color:var(--steel);
+    background:#0d1219;
+  }
+
+  /* Itinerary */
+  .itin{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+  .leg{
+    padding:18px 20px;border-right:1px solid var(--line);position:relative;
+  }
+  .leg:last-child{border-right:0}
+  .leg .step{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:30px;height:30px;border:1px solid var(--amber);color:var(--amber);
+    font-size:12px;letter-spacing:.1em;
+  }
+  .leg .topline{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .leg .time{
+    font-family:var(--display);font-weight:700;color:var(--amber);
+    font-size:30px;letter-spacing:.04em;line-height:1;
+  }
+  .leg .time small{display:block;font-family:var(--mono);font-weight:400;font-size:10px;letter-spacing:.22em;color:var(--steel-dim);margin-top:4px;text-align:right}
+  .leg h3{
+    font-family:var(--display);text-transform:uppercase;letter-spacing:.04em;
+    font-size:26px;color:var(--steel);margin:10px 0 6px;
+  }
+  .leg .where{font-size:12px;color:var(--steel-dim);letter-spacing:.14em;text-transform:uppercase}
+  .leg p{margin:10px 0 0;font-size:13px;line-height:1.6;color:#d6dae0}
+
+  /* Dress code */
+  .dress{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+  .chip{
+    padding:18px 18px;border-right:1px solid var(--line);
+  }
+  .chip:last-child{border-right:0}
+  .chip .ic{
+    width:34px;height:34px;border:1px solid var(--steel-dim);
+    display:flex;align-items:center;justify-content:center;color:var(--steel);
+    font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.04em;
+  }
+  .chip .lbl{margin-top:10px;font-size:14px;color:var(--steel)}
+  .chip .desc{margin-top:4px;font-size:12px;color:var(--steel-dim)}
+
+  /* Footer + Accept */
+  .accept-wrap{
+    margin-top:28px;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:stretch;
+  }
+  .notice{
+    border:1px solid var(--alert);background:rgba(228,75,60,.06);
+    padding:18px 20px;font-size:13px;line-height:1.6;color:#f0d2cf;
+  }
+  .notice b{color:var(--alert);letter-spacing:.18em}
+  .accept{
+    position:relative;border:1px solid var(--amber);background:#0d1219;
+    display:flex;flex-direction:column;justify-content:space-between;padding:18px;
+  }
+  .accept .lbl{font-size:11px;letter-spacing:.28em;color:var(--amber)}
+  .accept .btn{
+    margin-top:18px;display:flex;justify-content:space-between;align-items:center;
+    background:var(--amber);color:#0a0d12;border:0;padding:18px 20px;cursor:pointer;
+    font-family:var(--display);font-size:24px;letter-spacing:.06em;text-transform:uppercase;
+    transition:transform .12s ease, background .12s ease, box-shadow .12s ease;
+    box-shadow: 0 0 0 0 rgba(240,180,24,0);
+  }
+  .accept .btn:hover{background:#ffc620;box-shadow:0 0 28px rgba(240,180,24,.45)}
+  .accept .btn:active{transform:translateY(1px)}
+  .accept .btn .arrow{font-family:var(--mono);font-weight:800}
+  .decline{
+    margin-top:10px;background:transparent;border:1px dashed var(--line);color:var(--steel-dim);
+    padding:10px;font-family:var(--mono);font-size:11px;letter-spacing:.2em;cursor:pointer;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .decline:hover{color:var(--alert);border-color:var(--alert)}
+
+  /* Foot */
+  .foot{
+    margin-top:24px;display:flex;justify-content:space-between;align-items:center;
+    font-size:11px;letter-spacing:.22em;color:var(--steel-dim);
+    border-top:1px dashed var(--line);padding-top:14px;
+  }
+
+  /* Accepted overlay */
+  #accepted{
+    position:fixed;inset:0;background:rgba(7,9,12,.92);z-index:60;
+    display:none;align-items:center;justify-content:center;flex-direction:column;
+    text-align:center;padding:24px;
+  }
+  #accepted.on{display:flex;animation:fadein .45s ease-out}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  #accepted .ring{
+    width:220px;height:220px;border-radius:50%;border:1px solid var(--amber);
+    display:flex;align-items:center;justify-content:center;position:relative;
+    box-shadow: inset 0 0 60px rgba(240,180,24,.18), 0 0 80px rgba(240,180,24,.18);
+  }
+  #accepted .ring::before,#accepted .ring::after{
+    content:"";position:absolute;inset:-14px;border:1px dashed rgba(240,180,24,.4);border-radius:50%;
+    animation:spin 18s linear infinite;
+  }
+  #accepted .ring::after{inset:-30px;border-color:rgba(240,180,24,.18);animation-duration:34s;animation-direction:reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #accepted .check{font-family:var(--display);font-size:96px;color:var(--amber);line-height:1}
+  #accepted h2{
+    font-family:var(--display);font-size:64px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--steel);margin:22px 0 6px;
+  }
+  #accepted h2 .a{color:var(--amber)}
+  #accepted p{font-size:13px;letter-spacing:.18em;color:var(--steel-dim);text-transform:uppercase;margin:0}
+  #accepted .ticker{
+    margin-top:24px;font-size:12px;color:var(--green);letter-spacing:.16em;min-height:1.4em;
+  }
+  #accepted .selfdestruct{
+    margin-top:18px;text-align:center;min-height:120px;display:flex;flex-direction:column;align-items:center;gap:10px;
+  }
+  #accepted .selfdestruct[hidden]{display:none}
+  #accepted .sd-msg{
+    font-size:13px;letter-spacing:.22em;color:var(--alert);text-transform:uppercase;
+    animation: sdblink 0.6s steps(2) infinite;
+  }
+  @keyframes sdblink { 50% { opacity: .35 } }
+  #accepted .sd-count{
+    font-family:var(--display);font-weight:700;font-size:96px;line-height:1;color:var(--alert);
+    text-shadow: 0 0 30px rgba(228,75,60,.55);
+  }
+  #accepted .sd-count.shutdown{font-size:42px;letter-spacing:.12em;color:var(--alert)}
+  #accepted .closebar{
+    position:absolute;top:18px;right:18px;display:flex;gap:8px;
+  }
+  #accepted .closebar button{
+    background:transparent;color:var(--steel-dim);border:1px solid var(--line);
+    padding:6px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;cursor:pointer;
+  }
+  #accepted .closebar button:hover{color:var(--amber);border-color:var(--amber)}
+
+  /* Glitch on accept */
+  .glitch{animation:glitch .35s steps(3) 2}
+  @keyframes glitch{
+    0%{transform:translate(0,0)}
+    20%{transform:translate(-2px,1px);filter:hue-rotate(-10deg) saturate(1.2)}
+    40%{transform:translate(2px,-1px)}
+    60%{transform:translate(-1px,2px);filter:hue-rotate(10deg)}
+    80%{transform:translate(1px,0)}
+    100%{transform:translate(0,0)}
+  }
+
+  @media (max-width: 820px){
+    .header{grid-template-columns:1fr}
+    .manifest{grid-template-columns:1fr}
+    .itin{grid-template-columns:1fr}
+    .leg{border-right:0;border-bottom:1px solid var(--line)}
+    .leg:last-child{border-bottom:0}
+    .dress{grid-template-columns:1fr}
+    .chip{border-right:0;border-bottom:1px solid var(--line)}
+    .chip:last-child{border-bottom:0}
+    .accept-wrap{grid-template-columns:1fr}
+    #accepted h2{font-size:42px}
+  }
+</style>
+</head>
+<body>
+
+<!-- BOOT / DECRYPT -->
+<div id="boot" aria-hidden="true">
+  <div class="stream" id="bootStream"></div>
+</div>
+
+<main id="stage">
+
+  <div class="util">
+    <div class="left">
+      <span><span class="dot live"></span>SECURE LINK</span>
+      <span>CH-07 / ENCRYPTED</span>
+      <span>PACKET <b id="packet">0x…</b></span>
+    </div>
+    <div class="right">
+      <span><span class="dot amb"></span>CLEARANCE: TARGET-EYES-ONLY</span>
+      <span id="clock">--:--:-- AMS</span>
+    </div>
+  </div>
+
+  <div class="tape" aria-hidden="true"></div>
+
+  <section class="header">
+    <div>
+      <span class="stamp">// MISSION BRIEFING</span>
+      <h1 style="margin: 14px 0px; height: 184px;">OPERATION<br/><span class="accent">GROGU</span></h1>
+      <div class="sub">
+</div>
+    </div>
+    <div class="meta">
+      <div>CODENAME ......... <b>OPERATION GROGU</b></div>
+      <div>COMMANDER ........ <b>SAM</b></div>
+      <div>ASSIGNED PARTNER . <b>ALINA</b></div>
+      <div>ISSUED ........... <b id="issued">—</b></div>
+      <div>STATUS ........... <b style="color:var(--amber)">AWAITING RESPONSE</b></div>
+    </div>
+  </section>
+
+  <!-- BRIEFING -->
+  <section class="section">
+    <header><span><span class="code">§01</span> · BRIEFING</span><span>
+</span></header>
+    <div class="body brief">
+      <p>You are hereby invited on a <span class="hi">galactic-grade date night</span>. Mission objectives: secure a proper meal at a chosen refuel outpost, then deploy to the nearest cinema for the feature presentation.</p>
+      <p>Operatives are advised to arrive hungry. Hesitation will be punished by long queues and <span class="scrub">questionable</span> <span class="hi">excellent</span> menu choices made under pressure.</p>
+      <p>
+</p>
+    </div>
+  </section>
+
+  <!-- ITINERARY -->
+  <section class="section">
+    <header><span><span class="code">§02</span> · ITINERARY</span><span>MISSION START · 18:00 AMS
+</span></header>
+    <div class="itin">
+      <div class="leg">
+        <div class="topline">
+          <div class="step" style="border-width: 1px;">01</div>
+          <div class="time">18:00<small>DEPARTURE</small></div>
+        </div>
+        <h3 style="margin-top:18px">Leave Base</h3>
+        <p>Operatives depart homebase on schedule. Lock the door behind you.</p>
+      </div>
+      <div class="leg">
+        <div class="topline">
+          <div class="step">02</div>
+          <div class="time">18:45<small>DURATION · 1 HR</small></div>
+        </div>
+        <h3 style="margin-top:18px">Refuel Outpost</h3>
+        <p>Secure a proper meal of operative’s choosing. Suggested loadout below.</p>
+      </div>
+      <div class="leg">
+        <div class="topline">
+          <div class="step">03</div>
+          <div class="time">20:00<small>DURATION · 3 HRS</small></div>
+        </div>
+        <h3 style="margin-top:18px">Cinema Theatre</h3>
+        <p>Feature presentation incoming. Recline. Engage. Enjoy the show.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOOT MANIFEST -->
+  <section class="section">
+    <header><span><span class="code">§03</span> · MEAL LOADOUT</span><span>
+</span></header>
+    <div class="manifest">
+      <div class="item">
+        <div class="id">SKU-01</div>
+        <div class="name">Main Course<small>HOT · HANDHELD OR PLATED · OPERATIVE’S CHOICE</small></div>
+        <div class="qty"><span class="qbox">×1</span></div>
+      </div>
+      <div class="item">
+        <div class="id">SKU-02</div>
+        <div class="name">Side of Choice<small>FRIES · RINGS · NUGGETS · NEGOTIABLE</small></div>
+        <div class="qty"><span class="qbox">×1</span></div>
+      </div>
+      <div class="item">
+        <div class="id">SKU-03</div>
+        <div class="name">Something Sweet<small>SHAKE · DESSERT · BOTH IS ALSO FINE</small></div>
+        <div class="qty"><span class="qbox">×1</span></div>
+      </div>
+      <div class="item">
+        <div class="id">SKU-04</div>
+        <div class="name">Beverage<small>HYDRATION · CAFFEINATION · OPTIONAL FIZZ</small></div>
+        <div class="qty"><span class="qbox">×1</span></div>
+      </div>
+      <div class="item" style="grid-column:1 / -1">
+        <div class="id">SKU-05</div>
+        <div class="name">Suspiciously High Calorie Count<small>PERMITTED UNDER GALACTIC LAW · ARTICLE 9.3</small></div>
+        <div class="qty"><span class="qbox">ACCEPTED</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GEAR LOADOUT -->
+  <section class="section">
+    <header><span><span class="code">§04</span> · GEAR LOADOUT</span><span>
+</span></header>
+    <div class="dress">
+      <div class="chip">
+        <div class="ic">A</div>
+        <div class="lbl">Matching Outfits</div>
+        <div class="desc">Tactical coordination. Photographs well.</div>
+      </div>
+      <div class="chip">
+        <div class="ic">B</div>
+        <div class="lbl">Walkie-Talkies Issued at Homebase</div>
+        <div class="desc">Provided on departure — do not forget them.</div>
+      </div>
+      <div class="chip">
+        <div class="ic">C</div>
+        <div class="lbl">Bring Something to Drink</div>
+        <div class="desc">Popcorn will be provided at cinema location.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPORTANT NOTICE + ACCEPT -->
+  <div class="accept-wrap">
+    <div class="notice">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <b>// IMPORTANT NOTICE</b>
+        <span class="stamp alert" style="padding:3px 8px;font-size:10px">NOT A DRILL</span>
+      </div>
+      <p style="margin:0">This is not a drill. This is the way. Refusal is technically legal but historically inadvisable. Failure to respond within a reasonable window will result in escalation by the Commander.</p>
+    </div>
+    <div class="accept">
+      <div>
+        <div class="lbl">// RESPOND</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--steel-dim);line-height:1.6">One tap below transmits acknowledgement to Mission Control and confirms the date.</div>
+      </div>
+      <button class="btn" id="acceptBtn">
+        <span>Accept Mission</span>
+        <span class="arrow">→</span>
+      </button>
+      <button class="decline" id="declineBtn">// alternative response</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>EOF · TRANSMISSION COMPLETE</span>
+    <span>FOR THE EYES OF <b style="color:var(--steel)">ALINA</b> ONLY</span>
+    <span>v1.0 · <span id="hash">—</span></span>
+  </div>
+
+</main>
+
+<!-- ACCEPTED -->
+<div id="accepted" role="dialog" aria-modal="true">
+  <div class="closebar">
+    <button id="closeAcc">// close</button>
+  </div>
+  <div class="ring"><div class="check">✓</div></div>
+  <h2>MISSION <span class="a">ACCEPTED</span></h2>
+  <p>Transmission acknowledged · Commander Sam notified</p>
+  <div class="ticker" id="ticker"></div>
+  <div class="selfdestruct" id="selfdestruct" hidden>
+    <div class="sd-msg" id="sdMsg">// THIS MESSAGE WILL NOW SELF-DESTRUCT</div>
+    <div class="sd-count" id="sdCount"></div>
+  </div>
+  <div style="margin-top:18px;font-size:11px;letter-spacing:.22em;color:var(--steel-dim)">THIS IS THE WAY.</div>
+</div>
+
+<script>
+/* ---------- BOOT DECRYPT ---------- */
+(function(){
+  const lines = [
+    '<span>$</span> establishing encrypted handshake ······· <b>OK</b>',
+    '<span>$</span> verifying clearance level ················ <b>TARGET-EYES-ONLY</b>',
+    '<span>$</span> decrypting packet 0x<b id="hexout">________</b>',
+    '<span>$</span> loading dossier · <em>OPERATION GROGU</em> ········· <b>READY</b>',
+    '<span>$</span> rendering briefing<span class="caret"></span>'
+  ];
+  const stream = document.getElementById('bootStream');
+  const boot = document.getElementById('boot');
+  let i = 0;
+  function next(){
+    if(i >= lines.length){
+      // run hex spin briefly, then dismiss
+      spinHex().then(() => setTimeout(dismiss, 300));
+      return;
+    }
+    const div = document.createElement('div');
+    div.innerHTML = lines[i];
+    stream.appendChild(div);
+    i++;
+    setTimeout(next, 280 + Math.random()*220);
+  }
+  function spinHex(){
+    return new Promise(res => {
+      const el = document.getElementById('hexout');
+      if(!el){ res(); return; }
+      let t = 0;
+      const iv = setInterval(()=>{
+        el.textContent = Array.from({length:8},()=>Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+        t++;
+        if(t > 14){ clearInterval(iv); res(); }
+      }, 50);
+    });
+  }
+  function dismiss(){
+    boot.classList.add('gone');
+    setTimeout(()=> boot.remove(), 700);
+  }
+  setTimeout(next, 240);
+})();
+
+/* ---------- UTILITY ---------- */
+function rhex(n){ return Array.from({length:n},()=>Math.floor(Math.random()*16).toString(16).toUpperCase()).join(''); }
+document.getElementById('packet').textContent = '0x' + rhex(8);
+document.getElementById('hash').textContent = rhex(6);
+
+(function issuedClock(){
+  const TZ = 'Europe/Amsterdam';
+  const dateFmt = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  });
+  const timeFmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  });
+  const iss = document.getElementById('issued');
+  iss.textContent = dateFmt.format(new Date()).replace(',', '') + ' AMS';
+  const clock = document.getElementById('clock');
+  function tick(){
+    clock.textContent = timeFmt.format(new Date()) + ' AMS';
+  }
+  tick(); setInterval(tick, 1000);
+})();
+
+/* ---------- ACCEPT FLOW ---------- */
+const stage = document.getElementById('stage');
+const accBtn = document.getElementById('acceptBtn');
+const decBtn = document.getElementById('declineBtn');
+const acceptedEl = document.getElementById('accepted');
+const ticker = document.getElementById('ticker');
+const closeAcc = document.getElementById('closeAcc');
+
+accBtn.addEventListener('click', () => {
+  stage.classList.add('glitch');
+  setTimeout(() => stage.classList.remove('glitch'), 700);
+  setTimeout(showAccepted, 380);
+});
+
+function showAccepted(){
+  acceptedEl.classList.add('on');
+  const msgs = [
+    '> dispatching coordinates to partner ...',
+    '> reserving booth · table · two seats ...',
+    '> queuing meal order ...',
+    '> arming lightsaber sound effects ...',
+    '> date status :: CONFIRMED'
+  ];
+  let j = 0;
+  ticker.textContent = '';
+  document.getElementById('selfdestruct').hidden = true;
+  const iv = setInterval(()=>{
+    if(j >= msgs.length){
+      clearInterval(iv);
+      setTimeout(selfDestruct, 1000);
+      return;
+    }
+    ticker.textContent = msgs[j++];
+  }, 700);
+}
+
+function selfDestruct(){
+  const sd = document.getElementById('selfdestruct');
+  const sdCount = document.getElementById('sdCount');
+  sdCount.classList.remove('shutdown');
+  sd.hidden = false;
+  let n = 5;
+  sdCount.textContent = n;
+  const iv = setInterval(() => {
+    n--;
+    if(n > 0){
+      sdCount.textContent = n;
+    } else {
+      clearInterval(iv);
+      sdCount.classList.add('shutdown');
+      sdCount.textContent = '[ SHUTDOWN ]';
+      // glitch the page on shutdown
+      stage.classList.add('glitch');
+      setTimeout(() => {
+        window.location.href = 'https://www.google.com/search?tbm=isch&q=cute+kittens';
+      }, 1100);
+    }
+  }, 900);
+}
+
+closeAcc.addEventListener('click', () => acceptedEl.classList.remove('on'));
+
+decBtn.addEventListener('click', () => {
+  decBtn.textContent = '// invalid response. only one path forward. this is the way.';
+  decBtn.style.color = 'var(--alert)';
+  decBtn.style.borderColor = 'var(--alert)';
+});
+</script>
+</body>
+</html>
